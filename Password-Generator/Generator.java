@@ -51,23 +51,15 @@ public class Generator{
 		return character;
 	}
 
-	private String assemble(ArrayList<Character> password){
-		StringBuilder assembledPassword = new StringBuilder();
-		for(char pieceOfPassword : password){
-			assembledPassword.append(pieceOfPassword);
-		}
-
-		return assembledPassword.toString();
-	}
 
 	public String getPassword(){
-		ArrayList<Character> password = new ArrayList<>();
+		StringBuilder password = new StringBuilder();
 
 		for(int i = 0; i < passLength; i++){
-			password.add(pickAcharacter());
+			password.append(pickAcharacter());
 		}
 
-		return assemble(password);
+		return password.toString();
 	}
 	
 
