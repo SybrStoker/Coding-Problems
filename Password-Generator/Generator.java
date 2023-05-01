@@ -17,15 +17,6 @@ public class Generator{
 									'_', '=', '+', '/', '\\', '|', '[', ']', '{', '}', '\'',
 									'\"', ';', ':', ',', '.', '<', '>', '?', '`', '~'};
 
-	private void test(){
-		//delete this shit later
-		System.out.println(this.passLength);
-		System.out.println(this.letters);
-		System.out.println(this.capLetters);
-		System.out.println(this.numbers);
-		System.out.println(this.sChars);
-	}
-
 	public void setConfigurations(byte passLength, boolean letters,
 			boolean capLetters, boolean numbers, boolean sChars){
 		this.passLength = passLength;
