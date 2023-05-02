@@ -19,6 +19,14 @@ public class Generator{
 
 	public void setConfigurations(byte passLength, boolean letters,
 			boolean capLetters, boolean numbers, boolean sChars){
+		if(passLength > 25){
+			throw new Error("Your password is too long. Take it easy. You've got to stop!"); 
+		}
+
+		if(letters == false && capLetters == false &&
+				numbers == false && sChars == false){
+			throw new Error("No options. At least one option must be chosen.");
+		}
 		this.passLength = passLength;
 		this.letters = letters;
 		this.capLetters = capLetters;
@@ -57,6 +65,27 @@ public class Generator{
 
 		for(int i = 0; i < passLength; i++){
 			password.append(pickAcharacter());
+		}
+
+		return password.toString();
+	}
+
+	public String shufflePassword(String originalPass){
+		//it shuffles already existing password
+		ArrayList<Character> charsOfPass = new ArrayList<>();
+		StringBuilder password = new StringBuilder();
+		Random rand = new Random();
+		int index;
+
+		for(int i = 0; i < originalPass.length(); i++){
+			charsOfPass.add(originalPass.charAt(i));
+		}
+
+		int times = charsOfPass.size();
+		for(int i = 0; i < times; i++){
+			index = rand.nextInt(charsOfPass.size());
+			password.append(charsOfPass.get(index));
+			charsOfPass.remove(index);
 		}
 
 		return password.toString();
