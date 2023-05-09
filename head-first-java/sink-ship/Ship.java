@@ -2,16 +2,13 @@ import java.util.Random;
 import java.util.ArrayList;
 
 public class Ship{
-	private ArrayList<Integer> position = new ArrayList<>();
+	private ArrayList<String> position = new ArrayList<>();
 	private boolean killed;
+	private String name;
 
-	Ship(){
-		Random genPosition = new Random();
-		int startPoint = genPosition.nextInt(5);
-
-		for(int i = 0; i < 3; i++){
-			this.position.add(startPoint + i);
-		}
+	Ship(String name, ArrayList<String> position){
+		this.name = name;
+		this.position = position;
 	}
 
 	private void setKilled(){
@@ -24,7 +21,11 @@ public class Ship{
 		return this.killed;
 	}
 
-	public boolean confirmHit(int userStikePosition){
+	public String getName(){
+		return this.name;
+	}
+
+	public boolean confirmHit(String userStikePosition){
 		int indexOfCell = this.position.indexOf(userStikePosition);
 
 		if(indexOfCell >= 0){

@@ -1,9 +1,9 @@
 import java.util.Scanner;
 public class Features{
-	public int getInput(){
+	public String getInput(){
 		Scanner readInput = new Scanner(System.in);
 
-		int input = readInput.nextInt();
+		String input = readInput.nextLine();
 		return input;
 	}
 }
