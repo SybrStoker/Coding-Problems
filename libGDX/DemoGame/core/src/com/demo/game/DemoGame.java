@@ -26,11 +26,12 @@ public class DemoGame extends ApplicationAdapter {
 	private OrthographicCamera camera;
 	private SpriteBatch batch;
 	private Rectangle bucket;
-	private int screenWidth = 800;
-	private int screenheigh = 480;
+	private final int SCREEN_WIDTH = 1280;
+	private final int SCREEN_HEIGHT = 720;
 	private Vector3 touchPos;
 	private Array<Rectangle> raindrops;
 	private long lastDropTime;
+	final float MOVEMENT_SPEED = (float) SCREEN_WIDTH / 1.5f;
 
 	@Override
 	public void create (){
@@ -44,7 +45,7 @@ public class DemoGame extends ApplicationAdapter {
 		rainSoundtrack.play();
 
 		camera = new OrthographicCamera();
-		camera.setToOrtho(false, screenWidth, screenheigh);
+		camera.setToOrtho(false, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 		batch = new SpriteBatch();
 
@@ -53,7 +54,7 @@ public class DemoGame extends ApplicationAdapter {
 		bucket = new Rectangle();
 		bucket.width = 64;
 		bucket.height = 64;
-		bucket.x =  (screenWidth - bucket.width) / 2;
+		bucket.x =  (SCREEN_WIDTH - bucket.width) / 2;
 		bucket.y = 20;
 
 		raindrops = new Array<Rectangle>();
@@ -74,18 +75,21 @@ public class DemoGame extends ApplicationAdapter {
 		}
 		batch.end();
 
-		if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) bucket.x -= 200 * Gdx.graphics.getDeltaTime();//what is deltaTime thing?
-		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) bucket.x += 200 * Gdx.graphics.getDeltaTime();
+		if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) bucket.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();//what is deltaTime thing?
+		if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) bucket.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
 
 		//add the speed for this movement method(fix teleportation)
-		if(Gdx.input.isTouched()) {
+		if(Gdx.input.isTouched() && bucket.x != touchPos.x - bucket.width / 2) {
 			touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
 			camera.unproject(touchPos);
-			bucket.x = touchPos.x - bucket.width / 2;
+
+			if(bucket.x <= touchPos.x - bucket.width / 2) bucket.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+			if(bucket.x >= touchPos.x - bucket.width / 2) bucket.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+
 		}
 
 		if(bucket.x < 0) bucket.x = 0;
-		if(bucket.x > screenWidth - bucket.width) bucket.x = screenWidth - bucket.width;
+		if(bucket.x > SCREEN_WIDTH - bucket.width) bucket.x = SCREEN_WIDTH - bucket.width;
 
 		if(TimeUtils.nanoTime() - lastDropTime > 1000000000) spawnRaindrop();// i don't understand how this line works
 
@@ -101,6 +105,7 @@ public class DemoGame extends ApplicationAdapter {
 			}
 		}
 
+		if(Gdx.input.isKeyPressed(Input.Keys.Q)) Gdx.app.exit();
 
 	}
 
@@ -108,8 +113,8 @@ public class DemoGame extends ApplicationAdapter {
 		Rectangle raindrop = new Rectangle();
 		raindrop.width = 64;
 		raindrop.height = 64;
-		raindrop.x = MathUtils.random(0, screenWidth-raindrop.width);
-		raindrop.y = screenheigh;
+		raindrop.x = MathUtils.random(0, SCREEN_WIDTH - raindrop.width);
+		raindrop.y = SCREEN_HEIGHT;
 		raindrops.add(raindrop);
 		lastDropTime = TimeUtils.nanoTime();
 	}
