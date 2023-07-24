@@ -19,6 +19,7 @@ public class GameScreen implements Screen{
 
     private Texture dropSprite;
     private Texture bucketSprite;
+    private Texture background;
     private Sound dropSound;
     private Music rainSoundtrack;
     private SpriteBatch batch;
@@ -37,6 +38,7 @@ public class GameScreen implements Screen{
 
         dropSprite = new Texture(Gdx.files.internal("drop.png"));
         bucketSprite = new Texture(Gdx.files.internal("bucket.png"));
+        background = new Texture(Gdx.files.internal("background.png"));
 
         dropSound = Gdx.audio.newSound(Gdx.files.internal("waterdrop-sound.wav"));
         rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));
@@ -65,6 +67,7 @@ public class GameScreen implements Screen{
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
+        batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch.draw(bucketSprite, bucket.x, bucket.y);
         for(Rectangle raindrop: raindrops) {
             batch.draw(dropSprite, raindrop.x, raindrop.y);
@@ -101,9 +104,12 @@ public class GameScreen implements Screen{
         }
 
         //keys
-        if(Gdx.input.isKeyPressed(Input.Keys.Q)) Gdx.app.exit();
         if(Gdx.input.isKeyPressed(Input.Keys.O)) rainSoundtrack.stop();
         if(Gdx.input.isKeyPressed(Input.Keys.P)) rainSoundtrack.play();
+        if(Gdx.input.isKeyPressed(Input.Keys.Q)){
+            Gdx.app.exit();
+            dispose();
+        }
     }
 
 
@@ -152,5 +158,6 @@ public class GameScreen implements Screen{
         dropSound.dispose();
         rainSoundtrack.dispose();
         batch.dispose();
+        game.font.dispose();
     }
 }
