@@ -29,6 +29,7 @@ public class GameScreen implements Screen{
     private OrthographicCamera camera;
     final float MOVEMENT_SPEED = (float) DemoGame.SCREEN_WIDTH / 1.5f;
     final DemoGame game;
+    private int score;
 
     GameScreen(DemoGame game, OrthographicCamera camera){
         this.game = game;
@@ -62,17 +63,18 @@ public class GameScreen implements Screen{
         camera.update();
 
         batch.setProjectionMatrix(camera.combined);
+
         batch.begin();
         batch.draw(bucketSprite, bucket.x, bucket.y);
         for(Rectangle raindrop: raindrops) {
             batch.draw(dropSprite, raindrop.x, raindrop.y);
         }
+        game.font.draw(batch, "Score: " + score, 0, DemoGame.SCREEN_HEIGHT);
         batch.end();
 
         if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) bucket.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
         if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) bucket.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
 
-        //add the speed for this movement method(fix teleportation)
         if(Gdx.input.isTouched() && bucket.x != touchPos.x - bucket.width / 2) {
             touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
             camera.unproject(touchPos);
@@ -94,6 +96,7 @@ public class GameScreen implements Screen{
             if(raindrops.get(i).overlaps(bucket)) {
                 dropSound.play();
                 raindrops.removeIndex(i);
+                score++;
             }
         }
 

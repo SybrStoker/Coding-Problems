@@ -8,7 +8,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 public class MainMenuScreen implements Screen {
     final DemoGame game;
     private OrthographicCamera camera;
-    private String welcomeMessage = "Welcome to this really bad game -_- ";
+    private String welcomeMessage = "Click";
 
     MainMenuScreen(DemoGame game){
         this.game = game;
