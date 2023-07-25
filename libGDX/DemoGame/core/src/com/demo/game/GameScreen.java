@@ -20,14 +20,21 @@ import java.util.Iterator;
 
 
 public class GameScreen implements Screen{
-    private final Texture bucketSprite;
+    private final Texture vaseTexture;
     private final Texture background;
     private final Music rainSoundtrack;
-    private final Texture dropTexture;
+
+    private final Texture dropTexture1;
+    private final Texture dropTexture2;
+    private final Texture dropTexture3;
+    private final Texture dropTexture4;
+    private final Texture dropTexture5;
+    private final Texture dropTexture6;
+    private final Array<Texture> dropTextures;
     private final Sound dropSound;
 
     private final SpriteBatch batch;
-    private final Rectangle bucket;
+    private final Rectangle vase;
     private final Vector3 touchPos;
     private final Array<FallingObject> objects;
     private long lastDropTime;
@@ -41,21 +48,33 @@ public class GameScreen implements Screen{
         this.camera = camera;
 
         dropSound = Gdx.audio.newSound(Gdx.files.internal("waterDrop-sound.wav"));
-        dropTexture = new Texture(Gdx.files.internal("drops/regularDrop2.png"));
-        bucketSprite = new Texture(Gdx.files.internal("vase.png"));
+        dropTexture1 = new Texture(Gdx.files.internal("drops/regularDrop1.png"));
+        dropTexture2 = new Texture(Gdx.files.internal("drops/regularDrop2.png"));
+        dropTexture3 = new Texture(Gdx.files.internal("drops/regularDrop3.png"));
+        dropTexture4 = new Texture(Gdx.files.internal("drops/roundDrop1.png"));
+        dropTexture5 = new Texture(Gdx.files.internal("drops/roundDrop2.png"));
+        dropTexture6 = new Texture(Gdx.files.internal("drops/roundDrop3.png"));
+        dropTextures = new Array<>();
+        dropTextures.add(dropTexture1);
+        dropTextures.add(dropTexture2);
+        dropTextures.add(dropTexture3);
+        dropTextures.add(dropTexture4);
+        dropTextures.add(dropTexture5);
+        dropTextures.add(dropTexture6);
+
+        vaseTexture = new Texture(Gdx.files.internal("vase.png"));
         background = new Texture(Gdx.files.internal("backgroundSmall.png"));
         rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));
 
         batch = new SpriteBatch();
         touchPos = new Vector3();
-        bucket = new Rectangle();
+        vase = new Rectangle();
         objects = new Array<>();
 
         score = 0;
         rainSoundtrack.setLooping(true);
         setVasePosition();
-        objects.add(new Drop(32, 10, 200, dropSound, dropTexture));
-        lastDropTime = TimeUtils.nanoTime();
+        spawnObject();
     }
 
     @Override
@@ -67,8 +86,7 @@ public class GameScreen implements Screen{
         // check how much time has passed since last time a drop was spawned
         // -> Current time - time a drop spawned > 1 second then spawn a drop
         if(TimeUtils.nanoTime() - lastDropTime > 1000000000){
-            objects.add(new Drop(32, 10, 200, dropSound, dropTexture));
-            lastDropTime = TimeUtils.nanoTime();
+            spawnObject();
         }
 
         Iterator<FallingObject> queue = objects.iterator();
@@ -77,7 +95,7 @@ public class GameScreen implements Screen{
             object.fallDown();
 
             if(object.isHitTheGround()) queue.remove();
-            if(object.isCaught(bucket)){
+            if(object.isCaught(vase)){
                 queue.remove();
                 object.playSound();
                 score = object.effectGame(score);
@@ -86,10 +104,15 @@ public class GameScreen implements Screen{
     }
 
     private void setVasePosition(){
-        bucket.width = 60;
-        bucket.height = 10;
-        bucket.x =  (DemoGame.SCREEN_WIDTH - bucket.width) / 2;
-        bucket.y = 120;
+        vase.width = 60;
+        vase.height = 10;
+        vase.x =  (DemoGame.SCREEN_WIDTH - vase.width) / 2;
+        vase.y = 120;
+    }
+
+    private void spawnObject(){
+        objects.add(new Drop(32, 10, 200, dropSound, dropTextures));
+        lastDropTime = TimeUtils.nanoTime();
     }
 
     private void drawScene(){
@@ -97,7 +120,7 @@ public class GameScreen implements Screen{
 
         batch.begin();
         batch.draw(background, 0, 0);
-        batch.draw(bucketSprite, bucket.x, bucket.y - 100);
+        batch.draw(vaseTexture, vase.x, vase.y - 100);
 
         for(FallingObject ob: objects) {
             batch.draw(ob.getTexture(), ob.getX(), ob.getY());
@@ -110,19 +133,19 @@ public class GameScreen implements Screen{
     private void checkInput(){
         checkKeys();
 
-        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) bucket.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
-        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) bucket.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) vase.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) vase.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
 
-        if(Gdx.input.isTouched() && bucket.x != touchPos.x - bucket.width / 2) {
+        if(Gdx.input.isTouched() && vase.x != touchPos.x - vase.width / 2) {
             touchPos.set(Gdx.input.getX(),0, 0);
             camera.unproject(touchPos);
 
-            if(bucket.x <= touchPos.x - bucket.width / 2) bucket.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
-            if(bucket.x >= touchPos.x - bucket.width / 2) bucket.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+            if(vase.x <= touchPos.x - vase.width / 2) vase.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+            if(vase.x >= touchPos.x - vase.width / 2) vase.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
         }
 
-        if(bucket.x < 0) bucket.x = 0;
-        if(bucket.x > DemoGame.SCREEN_WIDTH - bucket.width) bucket.x = DemoGame.SCREEN_WIDTH - bucket.width;
+        if(vase.x < 0) vase.x = 0;
+        if(vase.x > DemoGame.SCREEN_WIDTH - vase.width) vase.x = DemoGame.SCREEN_WIDTH - vase.width;
     }
 
     private void checkKeys(){
@@ -164,7 +187,13 @@ public class GameScreen implements Screen{
 
     @Override
     public void dispose() {
-        bucketSprite.dispose();
+        dropTexture1.dispose();
+        dropTexture2.dispose();
+        dropTexture3.dispose();
+        dropTexture4.dispose();
+        dropTexture5.dispose();
+        dropTexture6.dispose();
+        vaseTexture.dispose();
         rainSoundtrack.dispose();
         batch.dispose();
         game.font.dispose();
