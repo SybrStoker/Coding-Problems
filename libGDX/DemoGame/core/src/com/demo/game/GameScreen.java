@@ -8,25 +8,28 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 
+import com.demo.fallingObjects.Drop;
+import com.demo.fallingObjects.FallingObject;
+
+import java.util.Iterator;
 
 
 public class GameScreen implements Screen{
-    private final Texture dropSprite;
     private final Texture bucketSprite;
     private final Texture background;
-    private final Sound dropSound;
     private final Music rainSoundtrack;
+    private final Texture dropTexture;
+    private final Sound dropSound;
 
     private final SpriteBatch batch;
     private final Rectangle bucket;
     private final Vector3 touchPos;
-    private final Array<Rectangle> raindrops;
+    private final Array<FallingObject> objects;
     private long lastDropTime;
     private final OrthographicCamera camera;
     final float MOVEMENT_SPEED = (float) DemoGame.SCREEN_WIDTH / 1.5f;
@@ -37,20 +40,22 @@ public class GameScreen implements Screen{
         this.game = game;
         this.camera = camera;
 
-        dropSprite = new Texture(Gdx.files.internal("drops/regularDrop2.png"));
+        dropSound = Gdx.audio.newSound(Gdx.files.internal("waterDrop-sound.wav"));
+        dropTexture = new Texture(Gdx.files.internal("drops/regularDrop2.png"));
         bucketSprite = new Texture(Gdx.files.internal("vase.png"));
         background = new Texture(Gdx.files.internal("backgroundSmall.png"));
-        dropSound = Gdx.audio.newSound(Gdx.files.internal("waterDrop-sound.wav"));
         rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));
 
         batch = new SpriteBatch();
         touchPos = new Vector3();
         bucket = new Rectangle();
-        raindrops = new Array<>();
+        objects = new Array<>();
 
+        score = 0;
         rainSoundtrack.setLooping(true);
         setVasePosition();
-        spawnRaindrop();
+        objects.add(new Drop(32, 10, 200, dropSound, dropTexture));
+        lastDropTime = TimeUtils.nanoTime();
     }
 
     @Override
@@ -60,16 +65,22 @@ public class GameScreen implements Screen{
         checkInput();
 
         // check how much time has passed since last time a drop was spawned
-        if(TimeUtils.nanoTime() - lastDropTime > 1000000000) spawnRaindrop();
+        // -> Current time - time a drop spawned > 1 second then spawn a drop
+        if(TimeUtils.nanoTime() - lastDropTime > 1000000000){
+            objects.add(new Drop(32, 10, 200, dropSound, dropTexture));
+            lastDropTime = TimeUtils.nanoTime();
+        }
 
-        for(int i = 0; i < raindrops.size; i++){
-            raindrops.get(i).y -= 200 * Gdx.graphics.getDeltaTime();
-            if(raindrops.get(i).y < 0) raindrops.removeIndex(i); //remove the object if hits the ground
+        Iterator<FallingObject> queue = objects.iterator();
+        while (queue.hasNext()){
+            FallingObject object = queue.next();
+            object.fallDown();
 
-            if(raindrops.get(i).overlaps(bucket)) {
-                dropSound.play();
-                raindrops.removeIndex(i);
-                score++;
+            if(object.isHitTheGround()) queue.remove();
+            if(object.isCaught(bucket)){
+                queue.remove();
+                object.playSound();
+                score = object.effectGame(score);
             }
         }
     }
@@ -88,8 +99,8 @@ public class GameScreen implements Screen{
         batch.draw(background, 0, 0);
         batch.draw(bucketSprite, bucket.x, bucket.y - 100);
 
-        for(Rectangle raindrop: raindrops) {
-            batch.draw(dropSprite, raindrop.x, raindrop.y);
+        for(FallingObject ob: objects) {
+            batch.draw(ob.getTexture(), ob.getX(), ob.getY());
         }
 
         game.font.draw(batch, "Score: " + score, 0, DemoGame.SCREEN_HEIGHT);
@@ -123,16 +134,6 @@ public class GameScreen implements Screen{
         }
     }
 
-    private void spawnRaindrop() {
-        Rectangle raindrop = new Rectangle();
-        raindrop.width = 32;
-        raindrop.height = 10;
-        raindrop.x = MathUtils.random(0, DemoGame.SCREEN_WIDTH - raindrop.width);
-        raindrop.y = DemoGame.SCREEN_HEIGHT;
-        raindrops.add(raindrop);
-        lastDropTime = TimeUtils.nanoTime();
-    }
-
     @Override
     public void show() {
         rainSoundtrack.play();
@@ -163,9 +164,7 @@ public class GameScreen implements Screen{
 
     @Override
     public void dispose() {
-        dropSprite.dispose();
         bucketSprite.dispose();
-        dropSound.dispose();
         rainSoundtrack.dispose();
         batch.dispose();
         game.font.dispose();
