@@ -12,16 +12,17 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 
-public class GameScreen implements Screen{
 
+
+public class GameScreen implements Screen{
     private final Texture dropSprite;
     private final Texture bucketSprite;
     private final Texture background;
     private final Sound dropSound;
     private final Music rainSoundtrack;
+
     private final SpriteBatch batch;
     private final Rectangle bucket;
     private final Vector3 touchPos;
@@ -39,41 +40,64 @@ public class GameScreen implements Screen{
         dropSprite = new Texture(Gdx.files.internal("drops/regularDrop2.png"));
         bucketSprite = new Texture(Gdx.files.internal("vase.png"));
         background = new Texture(Gdx.files.internal("backgroundSmall.png"));
-
         dropSound = Gdx.audio.newSound(Gdx.files.internal("waterDrop-sound.wav"));
         rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));
 
-        rainSoundtrack.setLooping(true);
-
         batch = new SpriteBatch();
-
         touchPos = new Vector3();
-
         bucket = new Rectangle();
-        bucket.width = 60;
-        bucket.height = 10;
-        bucket.x =  (DemoGame.SCREEN_WIDTH - bucket.width) / 2;
-        bucket.y = 120;
-
         raindrops = new Array<>();
+
+        rainSoundtrack.setLooping(true);
+        setVasePosition();
         spawnRaindrop();
     }
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(0.52f,0.8f,0.92f,0);
         camera.update();
+        drawScene();
+        checkInput();
 
+        // check how much time has passed since last time a drop was spawned
+        if(TimeUtils.nanoTime() - lastDropTime > 1000000000) spawnRaindrop();
+
+        for(int i = 0; i < raindrops.size; i++){
+            raindrops.get(i).y -= 200 * Gdx.graphics.getDeltaTime();
+            if(raindrops.get(i).y < 0) raindrops.removeIndex(i); //remove the object if hits the ground
+
+            if(raindrops.get(i).overlaps(bucket)) {
+                dropSound.play();
+                raindrops.removeIndex(i);
+                score++;
+            }
+        }
+    }
+
+    private void setVasePosition(){
+        bucket.width = 60;
+        bucket.height = 10;
+        bucket.x =  (DemoGame.SCREEN_WIDTH - bucket.width) / 2;
+        bucket.y = 120;
+    }
+
+    private void drawScene(){
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
         batch.draw(background, 0, 0);
         batch.draw(bucketSprite, bucket.x, bucket.y - 100);
+
         for(Rectangle raindrop: raindrops) {
             batch.draw(dropSprite, raindrop.x, raindrop.y);
         }
+
         game.font.draw(batch, "Score: " + score, 0, DemoGame.SCREEN_HEIGHT);
         batch.end();
+    }
+
+    private void checkInput(){
+        checkKeys();
 
         if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) bucket.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
         if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) bucket.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
@@ -88,21 +112,9 @@ public class GameScreen implements Screen{
 
         if(bucket.x < 0) bucket.x = 0;
         if(bucket.x > DemoGame.SCREEN_WIDTH - bucket.width) bucket.x = DemoGame.SCREEN_WIDTH - bucket.width;
+    }
 
-        if(TimeUtils.nanoTime() - lastDropTime > 1000000000) spawnRaindrop();
-
-        for(int i = 0; i < raindrops.size; i++){
-            raindrops.get(i).y -= 200 * Gdx.graphics.getDeltaTime();
-            if(raindrops.get(i).y + 64 < 0) raindrops.removeIndex(i);
-
-            if(raindrops.get(i).overlaps(bucket)) {
-                dropSound.play();
-                raindrops.removeIndex(i);
-                score++;
-            }
-        }
-
-        //keys
+    private void checkKeys(){
         if(Gdx.input.isKeyPressed(Input.Keys.O)) rainSoundtrack.stop();
         if(Gdx.input.isKeyPressed(Input.Keys.P)) rainSoundtrack.play();
         if(Gdx.input.isKeyPressed(Input.Keys.Q)){
@@ -110,7 +122,6 @@ public class GameScreen implements Screen{
             dispose();
         }
     }
-
 
     private void spawnRaindrop() {
         Rectangle raindrop = new Rectangle();
