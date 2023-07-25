@@ -50,10 +50,10 @@ public class GameScreen implements Screen{
         touchPos = new Vector3();
 
         bucket = new Rectangle();
-        bucket.width = 64;
-        bucket.height = 100;
+        bucket.width = 60;
+        bucket.height = 10;
         bucket.x =  (DemoGame.SCREEN_WIDTH - bucket.width) / 2;
-        bucket.y = 20;
+        bucket.y = 120;
 
         raindrops = new Array<>();
         spawnRaindrop();
@@ -68,7 +68,7 @@ public class GameScreen implements Screen{
 
         batch.begin();
         batch.draw(background, 0, 0);
-        batch.draw(bucketSprite, bucket.x, bucket.y);
+        batch.draw(bucketSprite, bucket.x, bucket.y - 100);
         for(Rectangle raindrop: raindrops) {
             batch.draw(dropSprite, raindrop.x, raindrop.y);
         }
@@ -115,7 +115,7 @@ public class GameScreen implements Screen{
     private void spawnRaindrop() {
         Rectangle raindrop = new Rectangle();
         raindrop.width = 32;
-        raindrop.height = 32;
+        raindrop.height = 10;
         raindrop.x = MathUtils.random(0, DemoGame.SCREEN_WIDTH - raindrop.width);
         raindrop.y = DemoGame.SCREEN_HEIGHT;
         raindrops.add(raindrop);
