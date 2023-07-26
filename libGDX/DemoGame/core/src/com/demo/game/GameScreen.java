@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 
+import com.demo.fallingObjects.Bomb;
 import com.demo.fallingObjects.Drop;
 import com.demo.fallingObjects.FallingObject;
 
@@ -32,9 +33,12 @@ public class GameScreen implements Screen{
     private final Texture dropTexture6;
     private final Array<Texture> dropTextures;
     private final Sound dropSound;
+    private final Texture bombTexture;
+    private final Sound explosionSound;
 
     private final SpriteBatch batch;
     private final Rectangle vase;
+    private final Rectangle fullVase;
     private final Vector3 touchPos;
     private final Array<FallingObject> objects;
     private long lastDropTime;
@@ -42,18 +46,24 @@ public class GameScreen implements Screen{
     final float MOVEMENT_SPEED = (float) DemoGame.SCREEN_WIDTH / 1.5f;
     final DemoGame game;
     private int score;
+    private int objectNumber;
 
     GameScreen(DemoGame game, OrthographicCamera camera){
         this.game = game;
         this.camera = camera;
 
-        dropSound = Gdx.audio.newSound(Gdx.files.internal("waterDrop-sound.wav"));
-        dropTexture1 = new Texture(Gdx.files.internal("drops/regularDrop1.png"));
-        dropTexture2 = new Texture(Gdx.files.internal("drops/regularDrop2.png"));
-        dropTexture3 = new Texture(Gdx.files.internal("drops/regularDrop3.png"));
-        dropTexture4 = new Texture(Gdx.files.internal("drops/roundDrop1.png"));
-        dropTexture5 = new Texture(Gdx.files.internal("drops/roundDrop2.png"));
-        dropTexture6 = new Texture(Gdx.files.internal("drops/roundDrop3.png"));
+        background = new Texture(Gdx.files.internal("backgroundSmall.png"));//dispose check[*]
+        vaseTexture = new Texture(Gdx.files.internal("vase.png"));//dispose check[*]
+        bombTexture = new Texture(Gdx.files.internal("bomb.png"));//dispose check[*]
+        explosionSound = Gdx.audio.newSound(Gdx.files.internal("explosion.wav"));//dispose check[*]
+        dropSound = Gdx.audio.newSound(Gdx.files.internal("waterDrop-sound.wav"));//dispose check[*]
+        rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));//dispose check[*]
+        dropTexture1 = new Texture(Gdx.files.internal("drops/regularDrop1.png"));//dispose check[*]
+        dropTexture2 = new Texture(Gdx.files.internal("drops/regularDrop2.png"));//dispose check[*]
+        dropTexture3 = new Texture(Gdx.files.internal("drops/regularDrop3.png"));//dispose check[*]
+        dropTexture4 = new Texture(Gdx.files.internal("drops/roundDrop1.png"));//dispose check[*]
+        dropTexture5 = new Texture(Gdx.files.internal("drops/roundDrop2.png"));//dispose check[*]
+        dropTexture6 = new Texture(Gdx.files.internal("drops/roundDrop3.png"));//dispose check[*]
         dropTextures = new Array<>();
         dropTextures.add(dropTexture1);
         dropTextures.add(dropTexture2);
@@ -62,13 +72,10 @@ public class GameScreen implements Screen{
         dropTextures.add(dropTexture5);
         dropTextures.add(dropTexture6);
 
-        vaseTexture = new Texture(Gdx.files.internal("vase.png"));
-        background = new Texture(Gdx.files.internal("backgroundSmall.png"));
-        rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));
-
-        batch = new SpriteBatch();
+        batch = new SpriteBatch();//dispose check[*]
         touchPos = new Vector3();
         vase = new Rectangle();
+        fullVase = new Rectangle();
         objects = new Array<>();
 
         score = 0;
@@ -89,13 +96,19 @@ public class GameScreen implements Screen{
             spawnObject();
         }
 
+        interactWithFallingObject();
+    }
+    private void interactWithFallingObject(){
         Iterator<FallingObject> queue = objects.iterator();
+        Rectangle hitArea = vase;
+
         while (queue.hasNext()){
             FallingObject object = queue.next();
             object.fallDown();
 
             if(object.isHitTheGround()) queue.remove();
-            if(object.isCaught(vase)){
+            if(object instanceof Bomb){hitArea = fullVase;}
+            if(object.isCaught(hitArea)){
                 queue.remove();
                 object.playSound();
                 score = object.effectGame(score);
@@ -104,15 +117,25 @@ public class GameScreen implements Screen{
     }
 
     private void setVasePosition(){
+        fullVase.width = 64;
+        fullVase.height = 128;
+        fullVase.x = (DemoGame.SCREEN_WIDTH - fullVase.width) / 2;
+        fullVase.y = 20;
+
         vase.width = 60;
         vase.height = 10;
-        vase.x =  (DemoGame.SCREEN_WIDTH - vase.width) / 2;
+        vase.x = fullVase.x;
         vase.y = 120;
     }
 
     private void spawnObject(){
+        objectNumber++;
         objects.add(new Drop(32, 10, 200, dropSound, dropTextures));
         lastDropTime = TimeUtils.nanoTime();
+
+        if(objectNumber % 20 == 0){
+            objects.add(new Bomb(32, 32, 250, explosionSound, bombTexture));
+        }
     }
 
     private void drawScene(){
@@ -120,12 +143,12 @@ public class GameScreen implements Screen{
 
         batch.begin();
         batch.draw(background, 0, 0);
-        batch.draw(vaseTexture, vase.x, vase.y - 100);
 
         for(FallingObject ob: objects) {
             batch.draw(ob.getTexture(), ob.getX(), ob.getY());
         }
 
+        batch.draw(vaseTexture, fullVase.x, fullVase.y);
         game.font.draw(batch, "Score: " + score, 0, DemoGame.SCREEN_HEIGHT);
         batch.end();
     }
@@ -133,19 +156,33 @@ public class GameScreen implements Screen{
     private void checkInput(){
         checkKeys();
 
-        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) vase.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
-        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)) vase.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            fullVase.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+            vase.x = fullVase.x;
+        }
+        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
+            fullVase.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+            vase.x = fullVase.x;
+        }
 
-        if(Gdx.input.isTouched() && vase.x != touchPos.x - vase.width / 2) {
+        if(Gdx.input.isTouched() && fullVase.x != touchPos.x - fullVase.width / 2) {
             touchPos.set(Gdx.input.getX(),0, 0);
             camera.unproject(touchPos);
 
-            if(vase.x <= touchPos.x - vase.width / 2) vase.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
-            if(vase.x >= touchPos.x - vase.width / 2) vase.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+            if(fullVase.x <= touchPos.x - fullVase.width / 2){
+                fullVase.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+                vase.x = fullVase.x;
+            }
+
+            if(fullVase.x >= touchPos.x - fullVase.width / 2){
+                fullVase.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
+                vase.x = fullVase.x;
+            }
         }
 
-        if(vase.x < 0) vase.x = 0;
-        if(vase.x > DemoGame.SCREEN_WIDTH - vase.width) vase.x = DemoGame.SCREEN_WIDTH - vase.width;
+        //don't let the vase to-get off the screen
+        if(fullVase.x < 0) fullVase.x = 0;
+        if(fullVase.x > DemoGame.SCREEN_WIDTH - fullVase.width) fullVase.x = DemoGame.SCREEN_WIDTH - fullVase.width;
     }
 
     private void checkKeys(){
@@ -194,9 +231,12 @@ public class GameScreen implements Screen{
         dropTexture5.dispose();
         dropTexture6.dispose();
         vaseTexture.dispose();
-        rainSoundtrack.dispose();
+        bombTexture.dispose();
+        dropSound.dispose();
+        explosionSound.dispose();
         batch.dispose();
         game.font.dispose();
         background.dispose();
+        rainSoundtrack.dispose();
     }
 }
