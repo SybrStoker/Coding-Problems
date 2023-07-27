@@ -8,7 +8,7 @@ public class Health {
     }
 
     public void gain(){
-        if(hp < 5){
+        if(hp <= 5){
             hp++;
         }
     }

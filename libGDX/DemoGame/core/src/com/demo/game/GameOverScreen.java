@@ -2,25 +2,25 @@ package com.demo.game;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 public class GameOverScreen implements Screen {
-    DemoGame dg;
-    SpriteBatch batch;
-    OrthographicCamera camera;
-    String gameOverMessage;
+    private final DemoGame dg;
+    private final SpriteBatch batch;
+    private final OrthographicCamera camera;
+    private final String gameOverMessage;
+    private final Music gameOverSoundtrack;
 
-    GameOverScreen(DemoGame dm, SpriteBatch batch, OrthographicCamera camera){
+    GameOverScreen(DemoGame dm, OrthographicCamera camera){
         this.dg = dm;
-        this.batch = batch;
         this.camera = camera;
+        batch = new SpriteBatch();
         gameOverMessage = "HA, HA! Looser!";
-    }
-    @Override
-    public void show() {
 
+        gameOverSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("gameOverSoundtrack.wav"));//dispose check[*]
     }
 
     @Override
@@ -36,6 +36,13 @@ public class GameOverScreen implements Screen {
             dg.setScreen(new GameScreen(dg, camera));
             dispose();
         }
+    }
+
+    @Override
+    public void show() {
+        gameOverSoundtrack.setLooping(true);
+        gameOverSoundtrack.play();
+        gameOverSoundtrack.setVolume(0.75f);
     }
 
     @Override
@@ -55,11 +62,12 @@ public class GameOverScreen implements Screen {
 
     @Override
     public void hide() {
-
+        gameOverSoundtrack.stop();
     }
 
     @Override
     public void dispose() {
         batch.dispose();
+        gameOverSoundtrack.dispose();
     }
 }

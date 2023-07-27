@@ -34,9 +34,7 @@ public class FallingObject {
         return fallingObject.y < 0;
     }
 
-    public boolean isCaught(Rectangle vase){
-        return fallingObject.overlaps(vase);
-    }
+    public boolean isCaught(Rectangle vase){return fallingObject.overlaps(vase);}
 
     public void playSound(){
         sound.play();

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -14,6 +15,7 @@ import com.badlogic.gdx.utils.TimeUtils;
 import com.demo.fallingObjects.Bomb;
 import com.demo.fallingObjects.Drop;
 import com.demo.fallingObjects.FallingObject;
+import com.demo.fallingObjects.Heart;
 import com.demo.mechanics.Health;
 import com.demo.mechanics.Controls;
 
@@ -24,6 +26,7 @@ public class GameScreen implements Screen{
     private final Texture vaseTexture;
     private final Texture background;
     private final Music rainSoundtrack;
+    private final Music mainSoundtrack;
 
     private final Texture dropTexture1;
     private final Texture dropTexture2;
@@ -36,6 +39,8 @@ public class GameScreen implements Screen{
     private final Texture bombTexture;
     private final Sound explosionSound;
     private final Texture heartTexture;
+    private final Texture heartObjectTexture;
+    private final Sound heartSound;
 
     private final SpriteBatch batch;
     private final Rectangle vase;
@@ -47,7 +52,7 @@ public class GameScreen implements Screen{
     private int score;
     private int objectNumber;
     private final Health hp;
-    Controls controls;
+    private final Controls controls;
 
     GameScreen(DemoGame game, OrthographicCamera camera){
         this.game = game;
@@ -56,10 +61,13 @@ public class GameScreen implements Screen{
         background = new Texture(Gdx.files.internal("backgroundSmall.png"));//dispose check[*]
         vaseTexture = new Texture(Gdx.files.internal("vase.png"));//dispose check[*]
         bombTexture = new Texture(Gdx.files.internal("bomb.png"));//dispose check[*]
-        heartTexture = new Texture((Gdx.files.internal("heart64.png")));
+        heartTexture = new Texture((Gdx.files.internal("heart64.png")));//dispose check[*]
+        heartObjectTexture = new Texture((Gdx.files.internal("heart32.png")));//dispose check[*]
         explosionSound = Gdx.audio.newSound(Gdx.files.internal("explosion.wav"));//dispose check[*]
         dropSound = Gdx.audio.newSound(Gdx.files.internal("waterDrop-sound.wav"));//dispose check[*]
+        heartSound = Gdx.audio.newSound(Gdx.files.internal("heart.wav"));//dispose check[*]
         rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));//dispose check[*]
+        mainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("mainTheme.wav"));//dispose check[*]
         dropTexture1 = new Texture(Gdx.files.internal("drops/regularDrop1.png"));//dispose check[*]
         dropTexture2 = new Texture(Gdx.files.internal("drops/regularDrop2.png"));//dispose check[*]
         dropTexture3 = new Texture(Gdx.files.internal("drops/regularDrop3.png"));//dispose check[*]
@@ -82,13 +90,13 @@ public class GameScreen implements Screen{
         hp = new Health();
 
         score = 0;
-        rainSoundtrack.setLooping(true);
         setVasePosition();
         spawnObject();
     }
 
     @Override
     public void render(float delta) {
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         camera.update();
         drawScene();
         controls.check(fullVase, vase, camera);
@@ -111,15 +119,18 @@ public class GameScreen implements Screen{
             object.fallDown();
 
             if(hp.isDead()){
-                rainSoundtrack.stop();
-                game.setScreen(new GameOverScreen(game, batch, camera));
+                game.setScreen(new GameOverScreen(game, camera));
             }
             if(object.isHitTheGround()) {
                 queue.remove();
-                if (!(object instanceof Bomb)) hp.loose();
+                if (object instanceof Drop) hp.loose();
             }
-            if(object instanceof Bomb)hitArea = fullVase;
+
+            if(object instanceof Bomb) hitArea = fullVase;
             if(object.isCaught(hitArea)){
+                if(object instanceof Bomb) ((Bomb) object).damage(hp);
+                if(object instanceof Heart) ((Heart) object).heal(hp);
+
                 queue.remove();
                 object.playSound();
                 score = object.effectGame(score);
@@ -147,6 +158,10 @@ public class GameScreen implements Screen{
         if(objectNumber % 20 == 0){
             objects.add(new Bomb(32, 32, 250, explosionSound, bombTexture));
         }
+
+        if(objectNumber % 25 == 0){
+            objects.add(new Heart(32, 10, 400, heartSound, heartObjectTexture));
+        }
     }
 
     private void drawScene(){
@@ -169,7 +184,13 @@ public class GameScreen implements Screen{
     }
     @Override
     public void show() {
+        rainSoundtrack.setLooping(true);
+        mainSoundtrack.setLooping(true);
+
+        rainSoundtrack.setVolume(0.25f);
+
         rainSoundtrack.play();
+        mainSoundtrack.play();
     }
 
 
@@ -189,7 +210,8 @@ public class GameScreen implements Screen{
 
     @Override
     public void hide() {
-
+        rainSoundtrack.stop();
+        mainSoundtrack.stop();
     }
 
     @Override
@@ -202,10 +224,14 @@ public class GameScreen implements Screen{
         dropTexture6.dispose();
         vaseTexture.dispose();
         bombTexture.dispose();
+        heartTexture.dispose();
+        heartObjectTexture.dispose();
         dropSound.dispose();
         explosionSound.dispose();
+        heartSound.dispose();
         batch.dispose();
         background.dispose();
         rainSoundtrack.dispose();
+        mainSoundtrack.dispose();
     }
 }
