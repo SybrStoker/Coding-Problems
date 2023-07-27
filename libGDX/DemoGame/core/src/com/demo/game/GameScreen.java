@@ -1,7 +1,6 @@
 package com.demo.game;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
@@ -9,13 +8,14 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 
 import com.demo.fallingObjects.Bomb;
 import com.demo.fallingObjects.Drop;
 import com.demo.fallingObjects.FallingObject;
+import com.demo.mechanics.Health;
+import com.demo.mechanics.Controls;
 
 import java.util.Iterator;
 
@@ -35,18 +35,19 @@ public class GameScreen implements Screen{
     private final Sound dropSound;
     private final Texture bombTexture;
     private final Sound explosionSound;
+    private final Texture heartTexture;
 
     private final SpriteBatch batch;
     private final Rectangle vase;
     private final Rectangle fullVase;
-    private final Vector3 touchPos;
     private final Array<FallingObject> objects;
     private long lastDropTime;
     private final OrthographicCamera camera;
-    final float MOVEMENT_SPEED = (float) DemoGame.SCREEN_WIDTH / 1.5f;
     final DemoGame game;
     private int score;
     private int objectNumber;
+    private final Health hp;
+    Controls controls;
 
     GameScreen(DemoGame game, OrthographicCamera camera){
         this.game = game;
@@ -55,6 +56,7 @@ public class GameScreen implements Screen{
         background = new Texture(Gdx.files.internal("backgroundSmall.png"));//dispose check[*]
         vaseTexture = new Texture(Gdx.files.internal("vase.png"));//dispose check[*]
         bombTexture = new Texture(Gdx.files.internal("bomb.png"));//dispose check[*]
+        heartTexture = new Texture((Gdx.files.internal("heart64.png")));
         explosionSound = Gdx.audio.newSound(Gdx.files.internal("explosion.wav"));//dispose check[*]
         dropSound = Gdx.audio.newSound(Gdx.files.internal("waterDrop-sound.wav"));//dispose check[*]
         rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));//dispose check[*]
@@ -73,10 +75,11 @@ public class GameScreen implements Screen{
         dropTextures.add(dropTexture6);
 
         batch = new SpriteBatch();//dispose check[*]
-        touchPos = new Vector3();
         vase = new Rectangle();
         fullVase = new Rectangle();
         objects = new Array<>();
+        controls = new Controls();
+        hp = new Health();
 
         score = 0;
         rainSoundtrack.setLooping(true);
@@ -88,7 +91,8 @@ public class GameScreen implements Screen{
     public void render(float delta) {
         camera.update();
         drawScene();
-        checkInput();
+        controls.check(fullVase, vase, camera);
+        controls.checkKeys(this, rainSoundtrack);
 
         // check how much time has passed since last time a drop was spawned
         // -> Current time - time a drop spawned > 1 second then spawn a drop
@@ -106,8 +110,15 @@ public class GameScreen implements Screen{
             FallingObject object = queue.next();
             object.fallDown();
 
-            if(object.isHitTheGround()) queue.remove();
-            if(object instanceof Bomb){hitArea = fullVase;}
+            if(hp.isDead()){
+                rainSoundtrack.stop();
+                game.setScreen(new GameOverScreen(game, batch, camera));
+            }
+            if(object.isHitTheGround()) {
+                queue.remove();
+                if (!(object instanceof Bomb)) hp.loose();
+            }
+            if(object instanceof Bomb)hitArea = fullVase;
             if(object.isCaught(hitArea)){
                 queue.remove();
                 object.playSound();
@@ -150,54 +161,15 @@ public class GameScreen implements Screen{
 
         batch.draw(vaseTexture, fullVase.x, fullVase.y);
         game.font.draw(batch, "Score: " + score, 0, DemoGame.SCREEN_HEIGHT);
+
+        for(int i = 1; i <= hp.getAmountOfHealth(); i++){
+            batch.draw(heartTexture,DemoGame.SCREEN_WIDTH - (i * heartTexture.getWidth()), DemoGame.SCREEN_HEIGHT - heartTexture.getHeight());
+        }
         batch.end();
     }
-
-    private void checkInput(){
-        checkKeys();
-
-        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            fullVase.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
-            vase.x = fullVase.x;
-        }
-        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
-            fullVase.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
-            vase.x = fullVase.x;
-        }
-
-        if(Gdx.input.isTouched() && fullVase.x != touchPos.x - fullVase.width / 2) {
-            touchPos.set(Gdx.input.getX(),0, 0);
-            camera.unproject(touchPos);
-
-            if(fullVase.x <= touchPos.x - fullVase.width / 2){
-                fullVase.x += MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
-                vase.x = fullVase.x;
-            }
-
-            if(fullVase.x >= touchPos.x - fullVase.width / 2){
-                fullVase.x -= MOVEMENT_SPEED * Gdx.graphics.getDeltaTime();
-                vase.x = fullVase.x;
-            }
-        }
-
-        //don't let the vase to-get off the screen
-        if(fullVase.x < 0) fullVase.x = 0;
-        if(fullVase.x > DemoGame.SCREEN_WIDTH - fullVase.width) fullVase.x = DemoGame.SCREEN_WIDTH - fullVase.width;
-    }
-
-    private void checkKeys(){
-        if(Gdx.input.isKeyPressed(Input.Keys.O)) rainSoundtrack.stop();
-        if(Gdx.input.isKeyPressed(Input.Keys.P)) rainSoundtrack.play();
-        if(Gdx.input.isKeyPressed(Input.Keys.Q)){
-            Gdx.app.exit();
-            dispose();
-        }
-    }
-
     @Override
     public void show() {
         rainSoundtrack.play();
-
     }
 
 
@@ -209,12 +181,10 @@ public class GameScreen implements Screen{
 
     @Override
     public void pause() {
-
     }
 
     @Override
     public void resume() {
-
     }
 
     @Override
@@ -235,7 +205,6 @@ public class GameScreen implements Screen{
         dropSound.dispose();
         explosionSound.dispose();
         batch.dispose();
-        game.font.dispose();
         background.dispose();
         rainSoundtrack.dispose();
     }

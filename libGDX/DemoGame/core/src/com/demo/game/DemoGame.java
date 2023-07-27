@@ -14,6 +14,7 @@ public class DemoGame extends Game {
 	public static final int SCREEN_WIDTH_MIDDLE = SCREEN_WIDTH / 2;
 	public static final int SCREEN_HEIGHT = 720;
 	public static final int SCREEN_HEIGHT_MIDDLE = SCREEN_HEIGHT / 2;
+	public static float MOVEMENT_SPEED = (float) DemoGame.SCREEN_WIDTH / 1.5f;
 
 	@Override
 	public void create() {
