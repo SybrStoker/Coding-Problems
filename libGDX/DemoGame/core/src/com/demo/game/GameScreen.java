@@ -3,13 +3,11 @@ package com.demo.game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.TimeUtils;
 
 import com.demo.fallingObjects.Bomb;
@@ -18,80 +16,69 @@ import com.demo.fallingObjects.FallingObject;
 import com.demo.fallingObjects.Heart;
 import com.demo.mechanics.Health;
 import com.demo.mechanics.Controls;
+import com.demo.mechanics.Spawner;
 
 import java.util.Iterator;
 
 
 public class GameScreen implements Screen{
-    private final Texture vaseTexture;
+    //my classes
+    private final DemoGame game;
+    private final Controls controls;
+    private final Health hp;
+    private final Spawner spawner;
+
+    //textures
     private final Texture background;
+    private final Texture vaseTexture;
+    private final Texture heartTexture;
+
+    //soundtracks
     private final Music rainSoundtrack;
     private final Music mainSoundtrack;
 
-    private final Texture dropTexture1;
-    private final Texture dropTexture2;
-    private final Texture dropTexture3;
-    private final Texture dropTexture4;
-    private final Texture dropTexture5;
-    private final Texture dropTexture6;
-    private final Array<Texture> dropTextures;
-    private final Sound dropSound;
-    private final Texture bombTexture;
-    private final Sound explosionSound;
-    private final Texture heartTexture;
-    private final Texture heartObjectTexture;
-    private final Sound heartSound;
-
+    //rendering
     private final SpriteBatch batch;
+    private final OrthographicCamera camera;
+
+    //rectangles
     private final Rectangle vase;
     private final Rectangle fullVase;
-    private final Array<FallingObject> objects;
-    private long lastDropTime;
-    private final OrthographicCamera camera;
-    final DemoGame game;
+
+    //data
     private int score;
-    private int objectNumber;
-    private final Health hp;
-    private final Controls controls;
 
     GameScreen(DemoGame game, OrthographicCamera camera){
+        //my classes
         this.game = game;
-        this.camera = camera;
-
-        background = new Texture(Gdx.files.internal("backgroundSmall.png"));//dispose check[*]
-        vaseTexture = new Texture(Gdx.files.internal("vase.png"));//dispose check[*]
-        bombTexture = new Texture(Gdx.files.internal("bomb.png"));//dispose check[*]
-        heartTexture = new Texture((Gdx.files.internal("heart64.png")));//dispose check[*]
-        heartObjectTexture = new Texture((Gdx.files.internal("heart32.png")));//dispose check[*]
-        explosionSound = Gdx.audio.newSound(Gdx.files.internal("explosion.wav"));//dispose check[*]
-        dropSound = Gdx.audio.newSound(Gdx.files.internal("waterDrop-sound.wav"));//dispose check[*]
-        heartSound = Gdx.audio.newSound(Gdx.files.internal("heart.wav"));//dispose check[*]
-        rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));//dispose check[*]
-        mainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("mainTheme.wav"));//dispose check[*]
-        dropTexture1 = new Texture(Gdx.files.internal("drops/regularDrop1.png"));//dispose check[*]
-        dropTexture2 = new Texture(Gdx.files.internal("drops/regularDrop2.png"));//dispose check[*]
-        dropTexture3 = new Texture(Gdx.files.internal("drops/regularDrop3.png"));//dispose check[*]
-        dropTexture4 = new Texture(Gdx.files.internal("drops/roundDrop1.png"));//dispose check[*]
-        dropTexture5 = new Texture(Gdx.files.internal("drops/roundDrop2.png"));//dispose check[*]
-        dropTexture6 = new Texture(Gdx.files.internal("drops/roundDrop3.png"));//dispose check[*]
-        dropTextures = new Array<>();
-        dropTextures.add(dropTexture1);
-        dropTextures.add(dropTexture2);
-        dropTextures.add(dropTexture3);
-        dropTextures.add(dropTexture4);
-        dropTextures.add(dropTexture5);
-        dropTextures.add(dropTexture6);
-
-        batch = new SpriteBatch();//dispose check[*]
-        vase = new Rectangle();
-        fullVase = new Rectangle();
-        objects = new Array<>();
         controls = new Controls();
         hp = new Health();
+        spawner = new Spawner();
 
+
+        //textures
+        background = new Texture(Gdx.files.internal("backgroundSmall.png"));//dispose check[*]
+        vaseTexture = new Texture(Gdx.files.internal("vase.png"));//dispose check[*]
+        heartTexture = new Texture((Gdx.files.internal("heart64.png")));//dispose check[*]
+
+        //soundtracks
+        rainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("rain-soundtrack.mp3"));//dispose check[*]
+        mainSoundtrack = Gdx.audio.newMusic(Gdx.files.internal("mainTheme.wav"));//dispose check[*]
+
+        //rendering
+        batch = new SpriteBatch();//dispose check[*]
+        this.camera = camera;
+
+        //rectangles
+        vase = new Rectangle();
+        fullVase = new Rectangle();
+
+        //data etc.
         score = 0;
-        setVasePosition();
-        spawnObject();
+        setRectanglesPositions();
+        rainSoundtrack.setLooping(true);
+        mainSoundtrack.setLooping(true);
+        spawner.spawnObject();
     }
 
     @Override
@@ -104,14 +91,14 @@ public class GameScreen implements Screen{
 
         // check how much time has passed since last time a drop was spawned
         // -> Current time - time a drop spawned > 1 second then spawn a drop
-        if(TimeUtils.nanoTime() - lastDropTime > 1000000000){
-            spawnObject();
+        if(TimeUtils.nanoTime() - spawner.getLastTimeDropSpawned() > 1000000000){
+            spawner.spawnObject();
         }
 
         interactWithFallingObject();
     }
     private void interactWithFallingObject(){
-        Iterator<FallingObject> queue = objects.iterator();
+        Iterator<FallingObject> queue = spawner.getObjects().iterator();
         Rectangle hitArea = vase;
 
         while (queue.hasNext()){
@@ -138,7 +125,7 @@ public class GameScreen implements Screen{
         }
     }
 
-    private void setVasePosition(){
+    private void setRectanglesPositions(){
         fullVase.width = 64;
         fullVase.height = 128;
         fullVase.x = (DemoGame.SCREEN_WIDTH - fullVase.width) / 2;
@@ -150,27 +137,13 @@ public class GameScreen implements Screen{
         vase.y = 120;
     }
 
-    private void spawnObject(){
-        objectNumber++;
-        objects.add(new Drop(32, 10, 200, dropSound, dropTextures));
-        lastDropTime = TimeUtils.nanoTime();
-
-        if(objectNumber % 20 == 0){
-            objects.add(new Bomb(32, 32, 250, explosionSound, bombTexture));
-        }
-
-        if(objectNumber % 25 == 0){
-            objects.add(new Heart(32, 10, 400, heartSound, heartObjectTexture));
-        }
-    }
-
     private void drawScene(){
         batch.setProjectionMatrix(camera.combined);
 
         batch.begin();
         batch.draw(background, 0, 0);
 
-        for(FallingObject ob: objects) {
+        for(FallingObject ob: spawner.getObjects()) {
             batch.draw(ob.getTexture(), ob.getX(), ob.getY());
         }
 
@@ -184,9 +157,6 @@ public class GameScreen implements Screen{
     }
     @Override
     public void show() {
-        rainSoundtrack.setLooping(true);
-        mainSoundtrack.setLooping(true);
-
         rainSoundtrack.setVolume(0.25f);
 
         rainSoundtrack.play();
@@ -216,22 +186,17 @@ public class GameScreen implements Screen{
 
     @Override
     public void dispose() {
-        dropTexture1.dispose();
-        dropTexture2.dispose();
-        dropTexture3.dispose();
-        dropTexture4.dispose();
-        dropTexture5.dispose();
-        dropTexture6.dispose();
-        vaseTexture.dispose();
-        bombTexture.dispose();
-        heartTexture.dispose();
-        heartObjectTexture.dispose();
-        dropSound.dispose();
-        explosionSound.dispose();
-        heartSound.dispose();
-        batch.dispose();
+        //textures
         background.dispose();
+        vaseTexture.dispose();
+        heartTexture.dispose();
+
+        //soundtracks
         rainSoundtrack.dispose();
         mainSoundtrack.dispose();
+
+        batch.dispose();
+
+        spawner.dispose();
     }
 }
