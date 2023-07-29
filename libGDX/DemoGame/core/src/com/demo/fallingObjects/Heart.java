@@ -5,8 +5,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.demo.mechanics.Health;
 
 public class Heart extends FallingObject{
-    public Heart(int width, int height, int fallingSpeed, Sound sound, Texture texture) {
-        super(width, height, fallingSpeed, sound, texture);
+    public Heart(int width, int height, float startPoint, float endPoint, int fallingSpeed, Sound sound, Texture texture) {
+        super(width, height, startPoint, endPoint, fallingSpeed, sound, texture);
     }
 
     @Override

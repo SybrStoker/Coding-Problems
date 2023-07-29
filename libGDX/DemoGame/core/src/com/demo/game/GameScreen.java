@@ -78,7 +78,7 @@ public class GameScreen implements Screen{
         setRectanglesPositions();
         rainSoundtrack.setLooping(true);
         mainSoundtrack.setLooping(true);
-        spawner.spawnObject();
+        spawner.spawnObject(fullVase.getX());
     }
 
     @Override
@@ -87,15 +87,27 @@ public class GameScreen implements Screen{
         camera.update();
         drawScene();
         controls.check(fullVase, vase, camera);
-        controls.checkKeys(this, rainSoundtrack);
+        controls.checkKeys(this);
 
         // check how much time has passed since last time a drop was spawned
         // -> Current time - time a drop spawned > 1 second then spawn a drop
         if(TimeUtils.nanoTime() - spawner.getLastTimeDropSpawned() > 1000000000){
-            spawner.spawnObject();
+            spawner.spawnObject(fullVase.getX());
         }
 
         interactWithFallingObject();
+    }
+
+    public void stopMusic(){
+        rainSoundtrack.stop();
+        mainSoundtrack.stop();
+    }
+
+    public void playMusic(){
+        rainSoundtrack.setVolume(0.25f);
+
+        rainSoundtrack.play();
+        mainSoundtrack.play();
     }
     private void interactWithFallingObject(){
         Iterator<FallingObject> queue = spawner.getObjects().iterator();
@@ -157,10 +169,7 @@ public class GameScreen implements Screen{
     }
     @Override
     public void show() {
-        rainSoundtrack.setVolume(0.25f);
-
-        rainSoundtrack.play();
-        mainSoundtrack.play();
+        playMusic();
     }
 
 
@@ -180,8 +189,7 @@ public class GameScreen implements Screen{
 
     @Override
     public void hide() {
-        rainSoundtrack.stop();
-        mainSoundtrack.stop();
+        stopMusic();
     }
 
     @Override

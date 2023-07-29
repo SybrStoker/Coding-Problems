@@ -9,12 +9,11 @@ import com.demo.game.DemoGame;
 
 public class FallingObject {
     private final int fallingSpeed;
-
     private final Rectangle fallingObject;
     private final Sound sound;
     private final Texture texture;
 
-    public FallingObject(int width, int height, int fallingSpeed, Sound sound, Texture texture){
+    public FallingObject(int width, int height, float startPoint, float endPoint, int fallingSpeed, Sound sound, Texture texture){
         this.fallingSpeed = fallingSpeed;
         this.sound = sound;
         this.texture = texture;
@@ -22,8 +21,36 @@ public class FallingObject {
         fallingObject = new Rectangle();
         fallingObject.width = width;
         fallingObject.height = height;
-        fallingObject.x = MathUtils.random(0, DemoGame.SCREEN_WIDTH - fallingObject.width);
-        fallingObject.y = DemoGame.SCREEN_HEIGHT;
+
+        if(endPoint == -1.0f){
+            endPoint = generateEndPoint(startPoint);
+        }
+
+        setPosition(startPoint, endPoint);
+    }
+
+    private void setPosition(float startPoint, float endPoint){
+        fallingObject.setPosition(MathUtils.random(startPoint, endPoint), DemoGame.SCREEN_HEIGHT);
+    }
+    protected float generateEndPoint(float vaseXCoordinate){
+        float endPosition;
+        float side;
+        float rightSide = vaseXCoordinate + (DemoGame.SCREEN_WIDTH - fallingObject.width) / 4;
+        float leftSide = vaseXCoordinate - (DemoGame.SCREEN_WIDTH - fallingObject.width) / 4;
+
+        if(rightSide > DemoGame.SCREEN_WIDTH)rightSide = DemoGame.SCREEN_WIDTH;
+        if(leftSide < 0) leftSide = 0;
+
+        //choose side
+        side = MathUtils.random(0, 1);
+
+        if(side == 0){
+            endPosition = leftSide;
+        } else{
+            endPosition = rightSide;
+        }
+
+        return endPosition;
     }
 
     public void fallDown(){

@@ -66,21 +66,17 @@ public class Spawner {
     
     public Array<FallingObject> getObjects(){ return objects;}
     
-    public void spawnObject(){
+    public void spawnObject(float vaseXCoordinate){
         objectNumber++;
         lastTimeDropSpawned = TimeUtils.nanoTime();
 
-        switch (objectNumber){
-            case 10:
-                objects.add(new Bomb(32, 32, 250, explosionSound, bombTexture));
-                break;
+        objects.add(new Drop(32, 10, vaseXCoordinate, -1.0f, 200, dropSound, dropTextures));
 
-            case 20:
-                objects.add(new Heart(32, 10, 400, heartSound, heartObjectTexture));
-                break;
+        if(objectNumber % 10 == 0) objects.add(
+                new Bomb(32, 32, vaseXCoordinate, vaseXCoordinate, 700, explosionSound, bombTexture));
 
-            default: objects.add(new Drop(32, 10, 200, dropSound, dropTextures));
-        }
+        if(objectNumber % 20 == 0) objects.add(
+                new Heart(32, 10, vaseXCoordinate, -1.0f, 250, heartSound, heartObjectTexture));
     }
     
     public  long getLastTimeDropSpawned(){ return lastTimeDropSpawned;}

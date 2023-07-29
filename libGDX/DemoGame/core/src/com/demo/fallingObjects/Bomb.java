@@ -5,8 +5,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.demo.mechanics.Health;
 
 public class Bomb extends FallingObject{
-    public Bomb(int width, int height, int fallingSpeed, Sound sound, Texture texture) {
-        super(width, height, fallingSpeed, sound, texture);
+    public Bomb(int width, int height, float startPoint, float endPoint, int fallingSpeed, Sound sound, Texture texture) {
+        super(width, height, startPoint, endPoint, fallingSpeed, sound, texture);
     }
 
     @Override

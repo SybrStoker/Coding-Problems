@@ -44,9 +44,9 @@ public class Controls {
         if(fullVase.x > DemoGame.SCREEN_WIDTH - fullVase.width) fullVase.x = DemoGame.SCREEN_WIDTH - fullVase.width;
     }
 
-    public void checkKeys(GameScreen gm, Music rainSoundtrack){
-        if(Gdx.input.isKeyPressed(Input.Keys.O)) rainSoundtrack.stop();
-        if(Gdx.input.isKeyPressed(Input.Keys.P)) rainSoundtrack.play();
+    public void checkKeys(GameScreen gm){
+        if(Gdx.input.isKeyPressed(Input.Keys.O)) gm.stopMusic();
+        if(Gdx.input.isKeyPressed(Input.Keys.P)) gm.playMusic();
         if(Gdx.input.isKeyPressed(Input.Keys.ESCAPE)) gm.pause();
         if(Gdx.input.isKeyPressed(Input.Keys.Q)){
             Gdx.app.exit();
